@@ -1,8 +1,10 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Web Scrapping with R and Logisting Regression"
+output: md_document
+output_file : README.md
 ---
 
+# Logistic Regression on Data Science Skills
 
 ```{r}
 library(rvest)
@@ -83,7 +85,7 @@ job_lists[1]
 Now lets find whether respective skills are present or not
 
 ```{r}
-unlist(job_lists)
+#unlist(job_lists)
 df <- data.frame(unlist(companies),unlist(summaries))
 names(df) <- c('company','requirement')
 head(df)
