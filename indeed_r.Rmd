@@ -2,21 +2,47 @@
 title: "Web Scrapping with R and Logisting Regression"
 output: md_document
 output_file : README.md
+author : "Sunil Prakash, Gaelan Gu,  Rose Wang Ruoshi, Yolanda Yu Yue "
+date: "06/02/2017"
 ---
 
-# Logistic Regression on Data Science Skills
+# Web Scrapping with R on Data Science Skills and applying Logistic Regression
+
+## 1. Objective
+
+Developing Logistig regression model on the technical skills required to predict the nature of the job. As Data Scientist job is itself challanging, learning a huge list of technology and frameworks, and even if mastering on some may not help on perfomace at the organization.
+So before applying for a job, finding how much relevent the job is , becomes important, so this work is dedicated to build a model to predict the relevent job, based on key skills.
+
+![Becoming Data Scientist](RoadToDataScientist1.png)
+image credit: Swami Chandrasekaran
+
+### 2. Singapore Job Market Analysis
+
+In Singapore, the data scientist jobs are not too much dynamic, but surely requires some key skills to have. To get the relevent job information, we tried to do web scrapping on http://indeed.com.sg website to find out the details on the skill set required for data scientist job.
+
+Following is an overview,
+![Skill Set analysis for Singapore](DataScientistSG.png)
+
+Now lets discuss about the implementation
+
+## 3. Implementation
+
+### 3.1 Web Scrapping - Gathering the relevent data
+
+Load rvest library, rvest helps you scrape information from web pages. It is designed to work with magrittr to make it easy to express common web scraping tasks, inspired by libraries like beautiful soup.
 
 ```{r}
 library(rvest)
 ```
 
+Query first to read the job portal page.
 
 ```{r}
-query = "data scientist"
-loc = ""
+
 html_page <- read_html("https://www.indeed.com.sg/jobs?q=data+scientist&l=")
-html_page
+print("html loaded")
 ```
+Lets find the number of number of search result for data scientist
 
 ```{r}
 #total results
@@ -28,9 +54,8 @@ total_jobs <- as.integer(unlist(strsplit(total_jobs," "))[6])
 sprintf("total job are is %d" , total_jobs )
 ```
 
-
-Now lets define functions
-
+As the job portal is paginated, we need to navigate to each pages, 1 by 1 ,to get all the relevent jobs for data scientist.
+*pages* , *companies* and *summaries* being extracted by navigating job portals paginated set.
 
 ```{r}
 rev_concat <- function(x,y){
@@ -41,7 +66,7 @@ no_of_pages = ceiling( total_jobs / 10 )
 pages <- list()
 companies <- list()
 summaries <- list()
-for( i in 1:2){
+for( i in 1:no_of_pages){
   page_wise = read_html(paste("https://www.indeed.com.sg/jobs?q=data+scientist&start=",(10 * i-1)+1))
   company_name = page_wise %>%
       html_nodes('.result[itemtype="http://schema.org/JobPosting"] ') %>%
@@ -63,13 +88,11 @@ for( i in 1:2){
   pages <- c(pages,job.result)
 }    
 
-head(companies)
-head(pages)
-head(summaries)
+summaries[0]
 ```
 
 
-Lets get details for each one
+Now, navigating to each link provided in the job portal page, to open the respective job description page to capture the entire job description.
 
 ```{r}
 # Submit form and get new url
@@ -79,13 +102,13 @@ job_lists <- lapply(pages, function(item){
   return (tolower(gsub("[^A-Za-z\\-]|\\.+", " ",description)))
 })
 
-job_lists[1]
+print("fetched all pages")
 ```
 
-Now lets find whether respective skills are present or not
+Converting the list of records to r data frames, for furthur analysis.
 
 ```{r}
-#unlist(job_lists)
+
 df <- data.frame(unlist(companies),unlist(summaries))
 names(df) <- c('company','requirement')
 head(df)
@@ -94,20 +117,15 @@ is_skill_present <- function(skill, job_desc){
   return(if(grepl(skill, job_desc)==TRUE) 1 else 0)
 }
 
-#is_python_list = lapply(job_lists, function())
-
-#skills <- c(" r ", "python", "spss")
-#cleared_text <- tolower(gsub("[^A-Za-z\\-]|\\.+", " ", sample_text))
 add_skill_info <- function(skillName){
-  return(as.factor(unlist(lapply(job_lists, function(job_desc) is_skill_present(skillName,job_desc)))))
-  #return(unlist(lapply(job_lists, function(job_desc) is_skill_present(skillName,job_desc))))
+  #return(as.factor(unlist(lapply(job_lists, function(job_desc) is_skill_present(skillName,job_desc)))))
+  return(unlist(lapply(job_lists, function(job_desc) is_skill_present(skillName,job_desc))))
 }
-
 
 
 ```
 
-Now lets find and add respective skills
+Now adding Few technology skills, as column to dataset.
 
 ```{r}
 
@@ -127,9 +145,6 @@ df$have_spark <- add_skill_info('spark')
 df$have_excel <- add_skill_info('excel')
 df$have_d3 <- add_skill_info('d3.js')
 
-#to find challenging job
-df$challenging_job <- (df$have_r=='1' | df$have_python=='1') &  (df$have_spss=='0' |  df$have_sas=='0' |  df$have_jmp=='0') 
-
 
 df$have_ml <- add_skill_info('machine learning')
 df$have_bigdata <- add_skill_info('big data')
@@ -138,12 +153,103 @@ df$have_economics <- add_skill_info('economics')
 df$have_supplychain <- add_skill_info('supply chain')
 df$have_crm <- add_skill_info('crm')
 
-summary(df)
-df_analyse <- df[3:23]
+df$innovative <- add_skill_info('innovative')
+df$teamplayer  <- add_skill_info('team player')
+df$communicator  <- add_skill_info('communicator')
+#to find challenging job
+df$challenging_job <- as.factor((df$innovative=='1' & (df$teamplayer | df$communicator=='1'))) 
 
-write.csv(df,file = "job_skills.csv")
+df <- df[-23]
+df <- df[-23]
+df <- df[-23]
 
-plot(df_analyse)
+head(df[3:23])
 
 ```
 
+Saving the extracted dataset to csv for furthur analysis by different tools
+
+```{r}
+write.csv(df,file = "job_skills.csv")
+```
+
+### 3.2 Logistic Regression with r
+
+#### 3.2.1 Importing Data
+```{r}
+
+jobs = read.csv('job_skills_v2.csv')
+
+# Removing single-factor variables and descriptive text columns
+jobs = jobs[, c(-1, -2, -4, -16, -22)]
+```
+
+
+#### 3.2.2 Testing for perfectly collinear variables and removing them
+```{r}
+cor(jobs, method = 'pearson')
+```
+```{r}
+# Removing have_jmp, have_ml, have_supplychain variables
+jobs = jobs[, c(-8, -13, -17)]
+```
+
+
+#### 3.2.3 Factorizing the variables
+```{r}
+# Factorizing the variables
+for (i in 1:15){
+  jobs[, i] = as.factor(jobs[, i])
+}
+
+summary(jobs)
+```
+
+#### 3.2.4 Train-Test Split
+```{r}
+library(caTools)
+set.seed(123)
+split = sample.split(jobs$challenging_job, SplitRatio = .8)
+trainset = subset(jobs, split == TRUE)
+testset = subset(jobs, split == FALSE)
+```
+
+#### 3.2.4 Logistic Regression
+```{r}
+jobsfit = glm(formula = challenging_job ~ ., 
+              family = binomial,
+              data = trainset)
+summary(jobsfit)
+```
+Logistic regression algorithm did not converge, so we pick a smaller number of independent variables.
+
+```{r}
+jobsfit1 = glm(formula = challenging_job ~ have_java + have_tableau + have_scala, 
+              family = binomial,
+              data = trainset)
+summary(jobsfit1)
+```
+
+#### 3.2.5 Chi-square Test
+```{r}
+attach(jobsfit1)
+pchisq(null.deviance - deviance, df.null - df.residual, lower.tail = FALSE)
+detach(jobsfit1)
+```
+Since p-value is less than 0.05, we reject the null hypothesis there is no relationship between the variables.
+
+#### 3.2.6 Validating the model
+```{r}
+prob_pred = predict(jobsfit1, newdata = testset[-15], type = 'response')
+challenge_pred = ifelse(prob_pred > 0.5, 1, 0)
+```
+
+#### 3.2.7 Confusion Matrix
+```{r}
+cm = table(testset[, 15], challenge_pred)
+cm
+```
+Model has a 87% accuracy rate; 68 correct predictions out of 78.
+
+
+** Thank you ** 
