@@ -1,0 +1,147 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(rvest)
+```
+
+
+```{r}
+query = "data scientist"
+loc = ""
+html_page <- read_html("https://www.indeed.com.sg/jobs?q=data+scientist&l=")
+html_page
+```
+
+```{r}
+#total results
+
+total_jobs <- html_page %>%
+  html_node('#searchCount') %>%
+  html_text()
+total_jobs <- as.integer(unlist(strsplit(total_jobs," "))[6])
+sprintf("total job are is %d" , total_jobs )
+```
+
+
+Now lets define functions
+
+
+```{r}
+rev_concat <- function(x,y){
+  return(paste(y,x,sep = ""))
+}
+
+no_of_pages = ceiling( total_jobs / 10 )
+pages <- list()
+companies <- list()
+summaries <- list()
+for( i in 1:2){
+  page_wise = read_html(paste("https://www.indeed.com.sg/jobs?q=data+scientist&start=",(10 * i-1)+1))
+  company_name = page_wise %>%
+      html_nodes('.result[itemtype="http://schema.org/JobPosting"] ') %>%
+        html_node('.company') %>%
+          html_text()
+  companies <- c(companies, gsub("\n|[ \t]+", " ", company_name) )
+  
+  short_desc = page_wise %>%
+      html_nodes('.result[itemtype="http://schema.org/JobPosting"] ') %>%
+        html_node('.summary') %>%
+          html_text()
+  summaries <- c(summaries, gsub("\n|[ \t]+", " ", short_desc) )
+  
+  
+  job.result <- page_wise %>%
+      html_nodes('.result[itemtype="http://schema.org/JobPosting"] ') %>%
+        html_attr(name="data-jk") %>%
+          rev_concat("https://www.indeed.com.sg/rc/clk?jk=")
+  pages <- c(pages,job.result)
+}    
+
+head(companies)
+head(pages)
+head(summaries)
+```
+
+
+Lets get details for each one
+
+```{r}
+# Submit form and get new url
+job_lists <- lapply(pages, function(item){
+  description <- read_html(item) %>%
+      html_text()
+  return (tolower(gsub("[^A-Za-z\\-]|\\.+", " ",description)))
+})
+
+job_lists[1]
+```
+
+Now lets find whether respective skills are present or not
+
+```{r}
+unlist(job_lists)
+df <- data.frame(unlist(companies),unlist(summaries))
+names(df) <- c('company','requirement')
+head(df)
+
+is_skill_present <- function(skill, job_desc){
+  return(if(grepl(skill, job_desc)==TRUE) 1 else 0)
+}
+
+#is_python_list = lapply(job_lists, function())
+
+#skills <- c(" r ", "python", "spss")
+#cleared_text <- tolower(gsub("[^A-Za-z\\-]|\\.+", " ", sample_text))
+add_skill_info <- function(skillName){
+  return(as.factor(unlist(lapply(job_lists, function(job_desc) is_skill_present(skillName,job_desc)))))
+  #return(unlist(lapply(job_lists, function(job_desc) is_skill_present(skillName,job_desc))))
+}
+
+
+
+```
+
+Now lets find and add respective skills
+
+```{r}
+
+df$have_python  <- add_skill_info('python')
+df$have_r       <- add_skill_info(' r')
+df$have_matlab  <- add_skill_info('matlab')
+df$have_java        <- add_skill_info(' java')
+df$have_scala        <- add_skill_info('scala')
+
+df$have_sas <- add_skill_info(' sas')
+df$have_spss <- add_skill_info('spss')
+df$have_hadoop <- add_skill_info('hadoop')
+df$have_jmp <- add_skill_info('jmp')
+df$have_tableau <- add_skill_info('tableau')
+df$have_sql <- add_skill_info(' sql')
+df$have_spark <- add_skill_info('spark')
+df$have_excel <- add_skill_info('excel')
+df$have_d3 <- add_skill_info('d3.js')
+
+#to find challenging job
+df$challenging_job <- (df$have_r=='1' | df$have_python=='1') &  (df$have_spss=='0' |  df$have_sas=='0' |  df$have_jmp=='0') 
+
+
+df$have_ml <- add_skill_info('machine learning')
+df$have_bigdata <- add_skill_info('big data')
+df$have_cs <- add_skill_info('computer science')
+df$have_economics <- add_skill_info('economics')
+df$have_supplychain <- add_skill_info('supply chain')
+df$have_crm <- add_skill_info('crm')
+
+summary(df)
+df_analyse <- df[3:23]
+
+write.csv(df,file = "job_skills.csv")
+
+plot(df_analyse)
+
+```
+
