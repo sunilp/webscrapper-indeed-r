@@ -4,7 +4,7 @@ Web Scrapping with R on Data Science Skills and applying Logistic Regression
 1. Objective
 ------------
 
-Developing Logistig regression model on the technical skills required to
+Developing Logistic regression model on the technical skills required to
 predict the nature of the job. As Data Scientist job is itself
 challanging, learning a huge list of technology and frameworks, and even
 if mastering on some may not help on perfomace at the organization. So
