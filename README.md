@@ -6,10 +6,10 @@ Web Scrapping with R on Data Science Skills and applying Logistic Regression
 
 We aim to develop a logistic regression model based on the technical skills required to
 predict the nature of the job. The job of a Data Scientist is itself
-challenging as it requires a large technical skillset. However, just mastering these skills may not necessarily mean the data scientist is one who is able to drastically improve the performance of the organization. So
+challenging as it requires a large technical skill set. However, just mastering these skills may not necessarily mean the data scientist is one who is able to drastically improve the performance of the organization. So
 before applying for a job, it becomes even more important to determine how challenging it can be. 
 
-Thus this work is dedicated to build a model to predict the relevent job, based on key technical skills.
+Thus this work is dedicated to build a model to predict the relevant job, based on key technical skills.
 
 ![Becoming Data Scientist](RoadToDataScientist1.png) image credit: Swami
 Chandrasekaran
@@ -17,7 +17,7 @@ Chandrasekaran
 ### 2. Singapore Job Market Analysis
 
 In Singapore, the data scientist jobs are not too much dynamic, but
-surely requires some key skills to have. To get the relevent job
+surely requires some key skills to have. To get the relevant job
 information, we tried to do web scrapping on <http://indeed.com.sg>
 website to find out the details on the skill set required for data
 scientist job.
@@ -25,29 +25,29 @@ scientist job.
 Following is an overview, ![Skill Set analysis for
 Singapore](DataScientistSG.png)
 
-Now lets discuss about the implementation
+Now lets discuss about the implementation.
 
 3. Implementation
 -----------------
 
-### 3.1 Web Scrapping - Gathering the relevent data
+### 3.1 Web Scrapping - Gathering the relevant data
 
-Load rvest library, rvest helps you scrape information from web pages.
-It is designed to work with magrittr to make it easy to express common
-web scraping tasks, inspired by libraries like beautiful soup.
+The *rvest* R package helps to scrape information from web pages.
+It is designed to work with *magrittr* to make it easy to express common
+web scraping tasks, inspired by libraries like *beautiful soup* on Python.
 
     library(rvest)
 
     ## Loading required package: xml2
 
-Query first to read the job portal page.
+Firstly, we query to read the job portal page.
 
     html_page <- read_html("https://www.indeed.com.sg/jobs?q=data+scientist&l=")
     print("html loaded")
 
     ## [1] "html loaded"
 
-Lets find the number of number of search result for data scientist
+Next, we determine the number of search results for data scientist
 
     #total results
 
@@ -59,10 +59,8 @@ Lets find the number of number of search result for data scientist
 
     ## [1] "total job are is 387"
 
-As the job portal is paginated, we need to navigate to each pages, 1 by
-1 ,to get all the relevent jobs for data scientist. *pages* ,
-*companies* and *summaries* being extracted by navigating job portals
-paginated set.
+As the job portal is paginated, we will need to navigate to each page to get all the relevant jobs for data scientist. *pages* ,
+*companies* and *summaries* being extracted by navigating job portal's paginated set.
 
     rev_concat <- function(x,y){
       return(paste(y,x,sep = ""))
@@ -98,7 +96,7 @@ paginated set.
 
     ## list()
 
-Now, navigating to each link provided in the job portal page, to open
+After navigating to each link provided in the job portal page, we open
 the respective job description page to capture the entire job
 description.
 
@@ -113,7 +111,7 @@ description.
 
     ## [1] "fetched all pages"
 
-Converting the list of records to r data frames, for furthur analysis.
+We then convert the list of records to R data frames for further analysis.
 
     df <- data.frame(unlist(companies),unlist(summaries))
     names(df) <- c('company','requirement')
@@ -143,7 +141,7 @@ Converting the list of records to r data frames, for furthur analysis.
       return(unlist(lapply(job_lists, function(job_desc) is_skill_present(skillName,job_desc))))
     }
 
-Now adding Few technology skills, as column to dataset.
+Now adding a few technology skills, as column to dataset.
 
     df$have_python  <- add_skill_info('python')
     df$have_r       <- add_skill_info(' r')
@@ -210,8 +208,8 @@ Now adding Few technology skills, as column to dataset.
     ## 5           FALSE
     ## 6            TRUE
 
-Saving the extracted dataset to csv for furthur analysis by different
-tools
+Finally, we save the extracted dataset to CSV format for further analysis using different
+tools.
 
     write.csv(df,file = "job_skills.csv")
 
@@ -324,6 +322,8 @@ tools
     ## have_supplychain      -0.1666667
     ## challenging_job        1.0000000
 
+We discover that there are perfectly collinear variables which we must remove from the dataset - mainly *have_jmp*, *have_ml*,  *have_supplychain*.
+
     # Removing have_jmp, have_ml, have_supplychain variables
     jobs = jobs[, c(-8, -13, -17)]
 
@@ -398,7 +398,7 @@ tools
     ## 
     ## Number of Fisher Scoring iterations: 25
 
-Logistic regression algorithm did not converge, so we pick a smaller
+Logistic regression algorithm did not converge, so we have to pick a smaller
 number of independent variables.
 
     jobsfit1 = glm(formula = challenging_job ~ have_java + have_tableau + have_scala, 
@@ -432,6 +432,10 @@ number of independent variables.
     ## 
     ## Number of Fisher Scoring iterations: 4
 
+We managed to achieve a reasonable combination of significant independent variables (p-values for each variable are less than 0.05).
+An Akaike Information Criterion (AIC) of 246...
+
+
 #### 3.2.5 Chi-square Test
 
     attach(jobsfit1)
@@ -441,7 +445,7 @@ number of independent variables.
 
     detach(jobsfit1)
 
-Since p-value is less than 0.05, we reject the null hypothesis there is
+Since p-value is less than 0.05, we reject the null hypothesis that there is
 no relationship between the variables.
 
 #### 3.2.6 Validating the model
