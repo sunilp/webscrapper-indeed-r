@@ -1,6 +1,6 @@
 Predicting the Difficulty of Data Scientist Roles in Singapore Using Logistic Regression
 ============================================================================
-Team TRUMP | Gaelan Gu, Sunil Prakash, Rose Wang Ruoshi, Yolanda Yu Yue
+**Team TRUMP | Gaelan Gu, Sunil Prakash, Rose Wang Ruoshi, Yolanda Yu Yue**
 
 1. Objective
 ------------
