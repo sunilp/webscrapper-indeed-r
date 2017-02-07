@@ -1,36 +1,40 @@
-Web Scrapping with R on Data Science Skills and applying Logistic Regression
+Predicting the Difficulty of Data Scientist Roles in Singapore Using Logistic Regression
 ============================================================================
 
 1. Objective
 ------------
 
 We aim to develop a logistic regression model based on the technical skills required to
-predict the nature of the job. The job of a Data Scientist is itself
-challenging as it requires a large technical skill set. However, just mastering these skills may not necessarily mean the data scientist is one who is able to drastically improve the performance of the organization. So
-before applying for a job, it becomes even more important to determine how challenging it can be. 
+predict the level of difficulty of the job. The job of a Data Scientist is itself
+challenging as it requires a large technical skill set. However, we will need to form some assumptions before beginning our analysis: 
 
-Thus this work is dedicated to build a model to predict the relevant job, based on key technical skills.
+* Level of difficulty (referred to as the *challenging_job* dependent variable) is determined based on whether the role requires a candidate to be innovative in thinking and is a great team player and communicator. Intangible qualities are selected instead of technical skills to avoid the problem of perfect correlation between *challenging_job* and the other variables.
+* *challenging_job* dependent variable is assumed to be binary - 1 for challenging and 0 for not challenging (or "easy" to "average" level of difficulty in layman terms).
+* Only meaningful and statistically significant variables are included in the final model and steps to achieve this is discussed in Section 3.2 of the report.
+
+Thus this work is dedicated to build a model to predict the most relevant job, based on key technical skills.
 
 ![Becoming Data Scientist](RoadToDataScientist1.png) image credit: Swami
 Chandrasekaran
 
-### 2. Singapore Job Market Analysis
+2. Singapore Job Market Analysis
+-----------------
 
 In Singapore, the data scientist jobs are not too much dynamic, but
 surely requires some key skills to have. To get the relevant job
-information, we tried to do web scrapping on <http://indeed.com.sg>
+information, we tried to do web scraping on <http://indeed.com.sg>
 website to find out the details on the skill set required for data
 scientist job.
 
 Following is an overview, ![Skill Set analysis for
 Singapore](DataScientistSG.png)
 
-Now lets discuss about the implementation.
+Now let us discuss about the implementation.
 
 3. Implementation
 -----------------
 
-### 3.1 Web Scrapping - Gathering the relevant data
+### 3.1 Web Scraping - Gathering the relevant data
 
 The *rvest* R package helps to scrape information from web pages.
 It is designed to work with *magrittr* to make it easy to express common
@@ -40,14 +44,14 @@ web scraping tasks, inspired by libraries like *beautiful soup* on Python.
 
     ## Loading required package: xml2
 
-Firstly, we query to read the job portal page.
+Firstly, we launch a query to read the job portal page.
 
     html_page <- read_html("https://www.indeed.com.sg/jobs?q=data+scientist&l=")
     print("html loaded")
 
     ## [1] "html loaded"
 
-Next, we determine the number of search results for data scientist
+Next, we determine the number of search results for data scientist roles.
 
     #total results
 
@@ -222,7 +226,8 @@ tools.
     # Removing single-factor variables and descriptive text columns
     jobs = jobs[, c(-1, -2, -4, -16, -22)]
 
-#### 3.2.2 Testing for perfectly collinear variables and removing them
+#### 3.2.2 Testing for perfectly multicollinear variables and removing them
+Perfectly multicollinear variables are undesirable in the model and will produce inaccurate results when it is run. Hence we have to test for the presence of such by running a correlation test among all variables to be considered.
 
     cor(jobs, method = 'pearson')
 
@@ -322,7 +327,7 @@ tools.
     ## have_supplychain      -0.1666667
     ## challenging_job        1.0000000
 
-We discover that there are perfectly collinear variables which we must remove from the dataset - mainly *have_jmp*, *have_ml*,  *have_supplychain*.
+We discover that there are perfectly correlated variables which we must remove from the dataset - mainly *have_jmp*, *have_ml*,  *have_supplychain*.
 
     # Removing have_jmp, have_ml, have_supplychain variables
     jobs = jobs[, c(-8, -13, -17)]
@@ -354,7 +359,10 @@ We discover that there are perfectly collinear variables which we must remove fr
     trainset = subset(jobs, split == TRUE)
     testset = subset(jobs, split == FALSE)
 
+We have 390 observations in all, which we will perform an 80:20 train-test split. There will be 312 rows in the training dataset and 78 in the testing dataset.
+
 #### 3.2.4 Logistic Regression
+With *challenging_job* as the dependent variable, we will attempt to develop a logistic regression model against all of the other independent variables.
 
     jobsfit = glm(formula = challenging_job ~ ., 
                   family = binomial,
@@ -398,8 +406,8 @@ We discover that there are perfectly collinear variables which we must remove fr
     ## 
     ## Number of Fisher Scoring iterations: 25
 
-Logistic regression algorithm did not converge, so we have to pick a smaller
-number of independent variables.
+Logistic regression algorithm did not converge, so we have to select a smaller
+number of independent variables for the model to work.
 
     jobsfit1 = glm(formula = challenging_job ~ have_java + have_tableau + have_scala, 
                   family = binomial,
@@ -433,10 +441,12 @@ number of independent variables.
     ## Number of Fisher Scoring iterations: 4
 
 We managed to achieve a reasonable combination of significant independent variables (p-values for each variable are less than 0.05).
-An Akaike Information Criterion (AIC) of 246...
+A high Akaike Information Criterion (AIC) of 246 would indicate a poor goodness of fit for the model, however the technical skills selected in the model appear to be highly relevant to the difficulty of the role.
+
+Java is a general-purpose programming language which can be used to carry out a wide range of tasks, including data analytics. Tableau is a highly useful program used in many global organizations to create informative and insightful visualizations. Lastly, Scala is a programming language like Java but is frequently used in conjunction with very large databases.
 
 
-#### 3.2.5 Chi-square Test
+#### 3.2.5 Chi-Square Test of Independence
 
     attach(jobsfit1)
     pchisq(null.deviance - deviance, df.null - df.residual, lower.tail = FALSE)
@@ -446,7 +456,7 @@ An Akaike Information Criterion (AIC) of 246...
     detach(jobsfit1)
 
 Since p-value is less than 0.05, we reject the null hypothesis that there is
-no relationship between the variables.
+no relationship between the variables; *challenging_job* is dependent on the other variables.
 
 #### 3.2.6 Validating the model
 
@@ -463,6 +473,6 @@ no relationship between the variables.
     ##   0 62  0
     ##   1 10  6
 
-Model has a 87% accuracy rate; 68 correct predictions out of 78.
+The confusion matrix tells us that the model has a 87% accuracy rate; 68 correct predictions out of 78. This suggests that our model is sufficiently strong enough to predict the difficulty of a role based on the abovementioned 3 technical skills.
 
 \*\* Thank you \*\*
