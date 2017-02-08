@@ -446,6 +446,7 @@ A high Akaike Information Criterion (AIC) of 246 would indicate a poor goodness 
 
 Java is a general-purpose programming language which can be used to carry out a wide range of tasks, including data analytics. Tableau is a highly useful program used in many global organizations to create informative and insightful visualizations. Lastly, Scala is a programming language like Java but is frequently used in conjunction with very large databases.
 
+A higher coefficient for *have_scala* would indicate that this skill is a more significant contributing factor to determining the difficulty of the role, as compared to *have_java* and *have_tableau* which have equal coefficients. This aligns with our thinking that a challenging data scientist role would require interaction with large databases.
 
 #### 3.2.5 Chi-Square Test of Independence
 
